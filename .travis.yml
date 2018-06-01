@@ -12,7 +12,7 @@ script:
   # Normal unit tests.
   - coverage run --source=pyDBtickets setup.py test
   # Code quality check.
-  - pylint apyori.py test/*.py
+  - pylint PyDBtickets
   # Integration test
   - apyori-run data/integration_test_input_1.tsv > result.txt
   - diff result.txt data/integration_test_output_1.txt

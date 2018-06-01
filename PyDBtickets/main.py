@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import commands as cmd
+import os
 import getopt
 import re
 
@@ -21,9 +21,7 @@ def find_potential_ticket_pdfs(folder_to_search, db_regex=DEFAULT_DB_REGEX):
     :param db_regex: regex for tickets
     :return: list of strings: absolute paths to tickets
     """
-    list_folder_to_search = cmd.getstatusoutput("ls " + folder_to_search)
-    if list_folder_to_search[0] != 0:
-        raise IOError("error in listing folder: ls", folder_to_search)
+    list_folder_to_search = os.listdir(folder_to_search)
     pot_tickets = [re.match(db_regex, filename) for filename in
                    list_folder_to_search[1].split("\n")]
     pot_tickets = [folder_to_search + "/" + pt.group() for pt in pot_tickets if pt]

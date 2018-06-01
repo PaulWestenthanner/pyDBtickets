@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import commands as cmd
 import datetime
 import os
 import re
@@ -153,13 +152,13 @@ class TrainTicketDocument(object):
         FROM and TO is abbreviated to only 3 letters
         """
         new_name = u"bahn_" + self.from_to[0][:3] + self.from_to[1][:3] +\
-                   self.travel_date.strftime("%Y%m%d")
+                   self.travel_date.strftime("%Y%m%d") + ".pdf"
         return unicode(new_name)
 
     def move_to_invoice_dir(self, invoice_dir):
         """
         Move the ticket to the invoice directory and rename it on the fly.
-        This is done via shell command and might not work under windows.
+        This is done via os.rename and might not work under windows.
         :param invoice_dir:
         :return:
         """
@@ -170,13 +169,7 @@ class TrainTicketDocument(object):
         if not os.path.isdir(target_dir):
             os.mkdir(target_dir)
 
-        move_statement = "mv {f} {target}/{newname}"\
-            .format(f=self.filename, target=target_dir,
-                    newname=self.get_new_filename())
-
-        status = cmd.getstatusoutput(move_statement)[0]
-        if status != 0:
-            raise ValueError("Error while moving: " + move_statement)
+        os.rename(self.filename, target_dir + self.get_new_filename())
 
     def update_cost_sheet(self, sheet_file_path):
         """
