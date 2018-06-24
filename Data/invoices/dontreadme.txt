@@ -1,0 +1,1 @@
+This file only exists since we cannot add empty directories to git.
