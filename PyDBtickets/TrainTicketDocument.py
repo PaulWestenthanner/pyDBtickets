@@ -44,7 +44,8 @@ class TrainTicketDocument(object):
         :param pattern: string
         :return: datetime.datetime
         """
-        date_str = re.search(pattern.decode("utf-8"), self.ticket_text.replace("\n", " ")).group()[-10:]
+        date_str = re.search(pattern.decode("utf-8"),
+                             self.ticket_text.replace("\n", " ")).group()[-10:]
         return datetime.datetime.strptime(date_str, "%d.%m.%Y")
 
     def find_date_bought(self):
@@ -86,8 +87,9 @@ class TrainTicketDocument(object):
         pattern = r"(Hinfahrt: )([A-ZÄÖÜa-zäöü.() ]+)(\+City)?(\n+)([A-ZÄÖÜa-zäöü.() ]+)" \
                   r"(\+City)?(\n|, mit (ICE|IC|EC|IC/EC|RE|RB))"
         # drop city ticket
-        extracted_groups = [x for x in re.search(pattern.decode("utf-8"), self.ticket_text).groups() if
-                            x != "+City" and x is not None]
+        extracted_groups = [x for x in re.search(pattern.decode("utf-8"),
+                                                 self.ticket_text).groups()
+                            if x != "+City" and x is not None]
         return extracted_groups[1], extracted_groups[3]
 
     def find_gross_price(self):
@@ -182,7 +184,7 @@ class TrainTicketDocument(object):
         """
         update_row = ["bahn",
                       u"_".join(self.from_to) +
-                              self.travel_date.strftime("%Y%m%d"),
+                      self.travel_date.strftime("%Y%m%d"),
                       self.date_bought.strftime("%Y-%m-%d"),
                       self.gross_price - self.vat,
                       self.vat,

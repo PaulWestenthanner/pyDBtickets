@@ -6,7 +6,7 @@ import re
 import sys
 
 from PyDBtickets.TrainTicketDocument import TrainTicketDocument
-from utils import NotATicketError
+from PyDBtickets.utils import NotATicketError
 DEFAULT_DB_REGEX = r"[A-Z0-9]{6}\.pdf"
 
 
@@ -18,11 +18,8 @@ def find_potential_ticket_pdfs(folder_to_search, db_regex=DEFAULT_DB_REGEX):
     :param db_regex: regex for tickets
     :return: list of strings: absolute paths to tickets
     """
-    print(folder_to_search)
     list_folder_to_search = os.listdir(folder_to_search)
-    print(list_folder_to_search)
     pot_tickets = [re.match(db_regex, filename) for filename in list_folder_to_search]
-    print(len(pot_tickets))
     pot_tickets = [folder_to_search + "/" + pt.group() for pt in pot_tickets if pt]
     return pot_tickets
 
