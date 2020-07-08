@@ -19,6 +19,13 @@ setuptools.setup(
     packages=[
         'PyDBtickets',
     ],
+    install_requires=[
+        'pyexcel==0.6.2',
+        'textract==1.6.1',
+        'pyexcel-ods3==0.5.3',
+        'pandas==1.0.5',
+        'xlrd==1.1.0'
+    ],
     test_suite='nose.collector',
     tests_require=['nose', 'mock'],
     entry_points={
@@ -34,14 +41,12 @@ setuptools.setup(
         'Intended Audience :: Frequent Travellers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        # todo add python 3 support
-        # 'Programming Language :: Python :: 3.3',
-        # 'Programming Language :: Python :: 3.4',
-        # 'Programming Language :: Python :: 3.5',
-        # 'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Tools :: Travel Expenses',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+    ],
 )

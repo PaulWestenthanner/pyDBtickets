@@ -3,6 +3,7 @@
 import datetime
 import os
 import re
+import shutil
 
 import pyexcel
 import textract
@@ -23,10 +24,8 @@ class TrainTicketDocument(object):
         self.travel_date_return = self.find_travel_date_return() if self.is_return else None
         self.from_to = self.find_from_to()
         self.amt_regex = r"\d{1,3},\d{2}€"  # assume there are no tickets > 1000 euros
-        self.vat_rate_full = 0.19
-        self.vat_rate_disc = 0.07  # discounted vat rate on tickets with less than 100km
         self.gross_price = self.find_gross_price()
-        self.vat = self.find_vat()
+        self.vat, self.payed_vat = self.find_vat()
 
 
     def extract_text(self):
@@ -44,7 +43,7 @@ class TrainTicketDocument(object):
         :param pattern: string
         :return: datetime.datetime
         """
-        date_str = re.search(pattern.decode("utf-8"),
+        date_str = re.search(pattern,
                              self.ticket_text.replace("\n", " ")).group()[-10:]
         return datetime.datetime.strptime(date_str, "%d.%m.%Y")
 
@@ -87,7 +86,7 @@ class TrainTicketDocument(object):
         pattern = r"(Hinfahrt: )([A-ZÄÖÜa-zäöü.() ]+)(\+City)?(\n+)([A-ZÄÖÜa-zäöü.() ]+)" \
                   r"(\+City)?(\n|, mit (ICE|IC|EC|IC/EC|RE|RB))"
         # drop city ticket
-        extracted_groups = [x for x in re.search(pattern.decode("utf-8"),
+        extracted_groups = [x for x in re.search(pattern,
                                                  self.ticket_text).groups()
                             if x != "+City" and x is not None]
         return extracted_groups[1], extracted_groups[3]
@@ -101,7 +100,7 @@ class TrainTicketDocument(object):
         # There is a price column stating the prices of all single positions and the
         # total price in the end
         # Hence it suffices to take the last amount
-        last_amt = re.search(pattern.decode("utf-8"), self.ticket_text).group().split("\n")[-1]
+        last_amt = re.search(pattern, self.ticket_text).group().split("\n")[-1]
         return float(re.search(r"[0-9,]+", last_amt).group().replace(",", "."))
 
     def find_vat(self):
@@ -111,47 +110,28 @@ class TrainTicketDocument(object):
         For one ticket there might be charged full (19%) and discounted (7%) VAT.
         :return: float, vat
         """
-        def get_vat(rate):
-            pattern_rate = r"\nMwSt \(?D\)? {r}%\n(".format(r=rate) + self.amt_regex + r"\n)*"
-            # there is a price column stating the prices of all single positions and
-            # the total price in the end
-            # Hence it suffices to take the last amount
-            amts = re.search(pattern_rate.decode("utf-8"), self.ticket_text)
-            if amts:
-                last_amt = [x for x in amts.group().split("\n") if x != ""][-1]
-                vat_at_rate = float(re.search(r"[0-9,]+", last_amt).group().replace(",", "."))
-            else:
-                vat_at_rate = 0
-            return vat_at_rate
+        def get_vat():
+            # todo: this does not support multiple positions yet
+            pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n(' + self.amt_regex + r")"
+            vat_rate_str, vat_at_rate_str = re.search(pattern, self.ticket_text).groups()
+            return int(vat_rate_str) * 0.01, round(float(vat_at_rate_str.rstrip('€').replace(',', '.')), 2)
 
-        vat_19 = get_vat(int(self.vat_rate_full * 100))
-        vat_7 = get_vat(int(self.vat_rate_disc * 100))
+        vat_rate, vat_at_rate = get_vat()
 
         # do some sanity checks
-        if vat_19 == 0:
-            if abs(self.gross_price - self.gross_price /
-                   (1 + self.vat_rate_disc) - vat_7) > 0.05:
-                # difference can be more than 1 ct because in multiple positions multiple
-                # rounding can occur
-                raise ValueError("discounted VAT does not match, expected {ex}, actual {ac}".format(
-                    ex=self.gross_price - self.gross_price / (1 + self.vat_rate_disc), ac=vat_7))
-
-        if vat_7 == 0:
-            if abs(self.gross_price - self.gross_price /
-                   (1 + self.vat_rate_full) - vat_19) > 0.05:
-                # difference can be more than 1 ct because in multiple positions multiple rounding
-                # can occur
-                raise ValueError("full VAT does not match, expected {ex}, actual {ac}".format(
-                    ex=self.gross_price - self.gross_price / (1 + self.vat_rate_full), ac=vat_7))
-
-        return vat_19 + vat_7
+        if abs(self.gross_price - self.gross_price / (1 + vat_rate) - vat_at_rate) > 0.05:
+            # difference can be more than 1 ct because in multiple positions multiple
+            # rounding can occur
+            raise ValueError("discounted VAT does not match, expected {ex}, actual {ac}".format(
+                ex=self.gross_price - self.gross_price / (1 + vat_rate), ac=vat_at_rate))
+        return vat_rate, vat_at_rate
 
     def get_new_filename(self):
         """
         rename the file to bahn_FROM_TO_traveldateYYYYMMDD.pdf
         FROM and TO is abbreviated to only 3 letters
         """
-        new_name = u"bahn_" + self.from_to[0][:3] + self.from_to[1][:3] +\
+        new_name = "bahn_" + self.from_to[0][:3] + self.from_to[1][:3] +\
                    self.travel_date.strftime("%Y%m%d") + ".pdf"
         return new_name
 
@@ -165,11 +145,11 @@ class TrainTicketDocument(object):
         # create a folder for vat every month. If it doesn't exist yet create it
         if not os.path.isdir(invoice_dir):
             raise ValueError("Invoice directory '%s' does not exist." % invoice_dir)
-        target_dir = invoice_dir + "/ust_" + self.date_bought.strftime("%Y_%m")
+        target_dir = f'{invoice_dir}/ust_{self.date_bought.strftime("%Y_%m")}'
         if not os.path.isdir(target_dir):
             os.mkdir(target_dir)
 
-        os.rename(self.filename, target_dir + "/" + self.get_new_filename())
+        shutil.copy(self.filename, f"{target_dir}/{self.get_new_filename()}")
 
     def update_cost_sheet(self, sheet_file_path):
         """
@@ -182,15 +162,19 @@ class TrainTicketDocument(object):
         u'Gross',
         u'Ust In / Buchungsmonat'
         """
+        #todo: add id here.
+        #todo: make this idempotent idempotent
         update_row = ["bahn",
-                      u"_".join(self.from_to) +
+                      "_".join(self.from_to) +
                       self.travel_date.strftime("%Y%m%d"),
                       self.date_bought.strftime("%Y-%m-%d"),
-                      self.gross_price - self.vat,
-                      self.vat,
+                      self.gross_price - self.payed_vat,
+                      self.payed_vat,
                       self.gross_price,
-                      self.date_bought.strftime("%Y-%m")
+                      self.date_bought.strftime("%Y-%m"),
+                      self.filename.rstrip('.pdf').split('/')[-1]
                      ]
         sheet = pyexcel.get_sheet(file_name=sheet_file_path)
-        sheet.row += update_row
-        sheet.save_as(sheet_file_path, dest_encoding="utf-8")
+        if not update_row in sheet.row:
+            sheet.row += update_row
+            sheet.save_as(sheet_file_path, dest_encoding="utf-8")

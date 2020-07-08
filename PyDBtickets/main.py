@@ -7,6 +7,7 @@ import sys
 
 from PyDBtickets.TrainTicketDocument import TrainTicketDocument
 from PyDBtickets.utils import NotATicketError
+# todo: is this the general rule
 DEFAULT_DB_REGEX = r"[A-Z0-9]{6}\.pdf"
 
 
@@ -59,12 +60,13 @@ def run(folder_to_search, invoice_dir, cost_sheet, db_regex):
         except NotATicketError:
             print("not a ticket " + pot_tick)
 
+    #import pdb; pdb.set_trace()
     for tick in tickets:
         # todo add proper logging
         print("ticket", tick.filename)
         print("from", tick.from_to[0], "to", tick.from_to[1], "on",
               tick.travel_date.strftime("%Y-%m-%d"))
-        print("total price:", tick.gross_price, "vat:", tick.vat)
+        print("total price:", tick.gross_price, "payed_vat:", tick.payed_vat)
         print("update cost sheet at", cost_sheet)
         tick.update_cost_sheet(cost_sheet)
         print("move to invoice directory", invoice_dir)
@@ -87,6 +89,7 @@ def main():
 
     # config variables
     # set default value if not otherwise specified in command line option
+    # TODO: change this to a default location which is available on all computers. Set default options in argparse
     folder_to_search = "/home/paul/Downloads"
     invoice_dir = "/home/paul/Documents/Steuer/Rechnungen"
     cost_sheet = "/home/paul/Documents/Steuer/bills_eur.ods"
