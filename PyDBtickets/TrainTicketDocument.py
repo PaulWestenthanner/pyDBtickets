@@ -162,8 +162,6 @@ class TrainTicketDocument(object):
         u'Gross',
         u'Ust In / Buchungsmonat'
         """
-        #todo: add id here.
-        #todo: make this idempotent idempotent
         update_row = ["bahn",
                       "_".join(self.from_to) +
                       self.travel_date.strftime("%Y%m%d"),
@@ -171,10 +169,11 @@ class TrainTicketDocument(object):
                       self.gross_price - self.payed_vat,
                       self.payed_vat,
                       self.gross_price,
+                      self.vat,
                       self.date_bought.strftime("%Y-%m"),
                       self.filename.rstrip('.pdf').split('/')[-1]
                      ]
         sheet = pyexcel.get_sheet(file_name=sheet_file_path)
-        if not update_row in sheet.row:
+        if update_row not in sheet.row:
             sheet.row += update_row
             sheet.save_as(sheet_file_path, dest_encoding="utf-8")

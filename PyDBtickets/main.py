@@ -4,10 +4,10 @@ import os
 import getopt
 import re
 import sys
+import yaml
 
 from PyDBtickets.TrainTicketDocument import TrainTicketDocument
 from PyDBtickets.utils import NotATicketError
-# todo: is this the general rule
 DEFAULT_DB_REGEX = r"[A-Z0-9]{6}\.pdf"
 
 
@@ -60,7 +60,6 @@ def run(folder_to_search, invoice_dir, cost_sheet, db_regex):
         except NotATicketError:
             print("not a ticket " + pot_tick)
 
-    #import pdb; pdb.set_trace()
     for tick in tickets:
         # todo add proper logging
         print("ticket", tick.filename)
@@ -81,18 +80,14 @@ def main():
     :return:
     """
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:i:c:r:h',
-                                   ['folder=', 'invoice=', 'costs=', 'regex=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:i:c:r:h:o',
+                                   ['folder=', 'invoice=', 'costs=', 'regex=', 'config=','help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
 
     # config variables
     # set default value if not otherwise specified in command line option
-    # TODO: change this to a default location which is available on all computers. Set default options in argparse
-    folder_to_search = "/home/paul/Downloads"
-    invoice_dir = "/home/paul/Documents/Steuer/Rechnungen"
-    cost_sheet = "/home/paul/Documents/Steuer/bills_eur.ods"
     db_regex = DEFAULT_DB_REGEX
 
     for opt, arg in opts:
@@ -107,6 +102,14 @@ def main():
             cost_sheet = arg
         elif opt in ('-r', '--regex'):
             db_regex = arg
+        elif opt in ('-o', '--config'):
+            for var in ['folder_to_search', 'invoice_dir', 'cost_sheet']:
+                assert var not in vars() or var not in globals()
+            with open(arg, 'r+') as f:
+                config = yaml.load(f)
+            folder_to_search = config['folder_to_search']
+            invoice_dir = config['invoice_dir']
+            cost_sheet = config['cost_sheet_path']
         else:
             usage()
             sys.exit(2)
