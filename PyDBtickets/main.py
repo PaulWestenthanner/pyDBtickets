@@ -51,6 +51,7 @@ def run(folder_to_search, invoice_dir, cost_sheet, db_regex):
 
     # find potential tickets
     potential_tickets = find_potential_ticket_pdfs(folder_to_search, db_regex=db_regex)
+    import pdb; pdb.set_trace()
     # drop the non-tickets
     tickets = []
     print(potential_tickets, len(potential_tickets))

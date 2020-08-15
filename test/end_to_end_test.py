@@ -33,9 +33,6 @@ invoice_dir = base_path + "/Data/invoices"
 
 class TestPyDB(unittest.TestCase):
 
-    def test_print_something(self):
-        print('hello it is me')
-
     def test_e2e_ticket_handling(self):
         with unittest.mock.patch('getopt.getopt', return_value=([('--config', 'configs/test_config.yml')],[])):
             main.main()
@@ -63,7 +60,8 @@ class TestPyDB(unittest.TestCase):
                                  ['bahn', 'München_Erlangen20180710', '2018-06-17', 12.52, 2.38, 14.9, 0.19, '2018-06',  'R2Q9KC'],
                                  ['bahn', 'München_Erlangen20180702', '2018-06-17', 16.3, 3.1, 19.4, 0.19, '2018-06', 'AM9PUE'],
                                  ['bahn', 'Erlangen_München20180705', '2018-06-17', 18.82, 3.58, 22.4, 0.19, '2018-06','44WDDW'],
-                                 ['bahn', 'Metzingen(Württ)_München20200203', '2020-02-03', 24.49, 1.71, 26.20, 0.07, '2020-02', '4QUCE7']
+                                 ['bahn', 'Metzingen(Württ)_München20200203', '2020-02-03', 24.49, 1.71, 26.20, 0.07, '2020-02', '4QUCE7'],
+                                 ['bahn', 'Erfurt_München20190608', '2019-05-22', 35.21, 6.69, 41.9, 0.19, '2019-05', 'SSGCFS']
                                  ]
                 new_rows = pyexcel.get_sheet(file_name=base_path + "/Data/blank_cost_sheet.ods").get_array()[3:]
                 # pyexcel.get_sheet.get_array can have float imprecisions, therefore we clean them here

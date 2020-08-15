@@ -96,7 +96,7 @@ class TrainTicketDocument(object):
         Find gross price including VAT of the ticket
         :return: float, gross price
         """
-        pattern = r"\nPreis\n(" + self.amt_regex + ")*"
+        pattern = r"\nBetrag\n(" + self.amt_regex + ")*"
         # There is a price column stating the prices of all single positions and the
         # total price in the end
         # Hence it suffices to take the last amount
@@ -112,9 +112,20 @@ class TrainTicketDocument(object):
         """
         def get_vat():
             # todo: this does not support multiple positions yet
-            pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n(' + self.amt_regex + r")"
-            vat_rate_str, vat_at_rate_str = re.search(pattern, self.ticket_text).groups()
-            return int(vat_rate_str) * 0.01, round(float(vat_at_rate_str.rstrip('€').replace(',', '.')), 2)
+#            pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n(' + self.amt_regex + r")"
+            pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n([\s\S]*)' + str(self.gross_price).replace('.', ',')
+            vat_rate_str, vat_at_rate_str_list = re.search(pattern, self.ticket_text).groups()
+            payed_var_list = vat_at_rate_str_list.rstrip('€\n').split('€\n')
+            # multiple position case
+            if len(payed_var_list) > 1:
+                # assert that we have always 2n+1 elements in the list
+                assert len(payed_var_list) % 2 == 1
+                payed_var_as_str = [el for idx, el in enumerate(payed_var_list) if idx % 2 == 0]
+                payed_var = sum([round(float(el.replace(',', '.')), 2) for el in payed_var_as_str])
+            # single position case. This is comparably easy
+            else:
+                payed_var = round(float(vat_at_rate_str_list.rstrip('€\n').replace(',', '.')), 2)
+            return int(vat_rate_str) * 0.01, payed_var
 
         vat_rate, vat_at_rate = get_vat()
 
