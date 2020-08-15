@@ -111,8 +111,7 @@ class TrainTicketDocument(object):
         :return: float, vat
         """
         def get_vat():
-            # todo: this does not support multiple positions yet
-#            pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n(' + self.amt_regex + r")"
+            # todo: this might not work if we have different vats
             pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n([\s\S]*)' + str(self.gross_price).replace('.', ',')
             vat_rate_str, vat_at_rate_str_list = re.search(pattern, self.ticket_text).groups()
             payed_var_list = vat_at_rate_str_list.rstrip('€\n').split('€\n')
