@@ -27,33 +27,33 @@ def cleanup_data_dir():
     copytree(base_path + "/Data_backup", base_path + "/Data")
 
 
-folder_to_search = base_path + "/Data/input_pdfs"
-cost_sheet_path = base_path + "/Data/blank_cost_sheet.ods"
-invoice_dir = base_path + "/Data/invoices"
-
 class TestPyDB(unittest.TestCase):
 
     def test_e2e_ticket_handling(self):
-        with unittest.mock.patch('getopt.getopt', return_value=([('--config', 'configs/test_config.yml')],[])):
+        with unittest.mock.patch('getopt.getopt',
+                                 return_value=([('--config', f'{base_path}/configs/test_config.yml')],[])):
             main.main()
 
             try:
-                assert isdir(base_path + "/Data/invoices/ust_2018_06")
+                self.assertTrue(isdir(base_path + "/Data/invoices/ust_2018_06"))
+                self.assertTrue(isdir(base_path + "/Data/invoices/ust_2019_05"))
+                self.assertTrue(isdir(base_path + "/Data/invoices/ust_2020_02"))
 
                 # check if correct tickets were found and renamed
-                expected_tickets = [u'bahn_ErlMün20180705.pdf',
+                expected_tickets_201806 = [u'bahn_ErlMün20180705.pdf',
                                     u'bahn_MünErl20180702.pdf',
                                     u'bahn_MünErl20180710.pdf'
                                     ]
 
-                assert len(expected_tickets) == len(os.listdir(base_path + "/Data/invoices/ust_2018_06"))
-                assert len(set(expected_tickets).intersection(
-                    set([x for x in os.listdir(base_path + "/Data/invoices/ust_2018_06")]))
-                ) == 3
+                self.assertEqual(len(expected_tickets_201806),
+                                 len(os.listdir(base_path + "/Data/invoices/ust_2018_06")))
+                self.assertEqual(len(set(expected_tickets_201806).intersection(
+                    set([x for x in os.listdir(base_path + "/Data/invoices/ust_2018_06")]))), 3)
 
                 # check if tickets were moved
                 expected_non_tickets = [u"cv.pdf", u"unicodeexample.pdf"]
-                assert len(set(expected_non_tickets).intersection(set(os.listdir(base_path + "/Data/input_pdfs")))) == 2
+                self.assertEqual(len(set(expected_non_tickets).intersection(
+                    set(os.listdir(base_path + "/Data/input_pdfs")))), 2)
 
                 # check if sheet was updated
                 expected_rows = [
@@ -66,7 +66,10 @@ class TestPyDB(unittest.TestCase):
                 new_rows = pyexcel.get_sheet(file_name=base_path + "/Data/blank_cost_sheet.ods").get_array()[3:]
                 # pyexcel.get_sheet.get_array can have float imprecisions, therefore we clean them here
                 new_rows = [[s if not isinstance(s, float) else round(s, 2) for s in row] for row in new_rows]
-                assert all([new_row in expected_rows for new_row in new_rows])
-                assert all([ex_row in new_rows for ex_row in expected_rows])
+                self.assertTrue(all([new_row in expected_rows for new_row in new_rows]))
+                self.assertTrue(all([ex_row in new_rows for ex_row in expected_rows]))
             finally:
                 cleanup_data_dir()
+
+if __name__ == "__main__":
+    unittest.main()

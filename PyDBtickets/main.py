@@ -35,6 +35,8 @@ def usage():
     print("param -f --folder    Folder to search for train tickets")
     print("param -i --invoice   Directory to invoices/bills")
     print("param -c --costs     File path to cost sheet (in ods format)")
+    print("param -o --config    config file (.yaml) which contains the above variables."
+          "Can be used instead of passing all params on their own")
     print("param -r --regex     Regex for pdf files to consider as potential train tickets")
 
 
@@ -51,7 +53,6 @@ def run(folder_to_search, invoice_dir, cost_sheet, db_regex):
 
     # find potential tickets
     potential_tickets = find_potential_ticket_pdfs(folder_to_search, db_regex=db_regex)
-    import pdb; pdb.set_trace()
     # drop the non-tickets
     tickets = []
     print(potential_tickets, len(potential_tickets))
@@ -87,8 +88,6 @@ def main():
         usage()
         sys.exit(2)
 
-    # config variables
-    # set default value if not otherwise specified in command line option
     db_regex = DEFAULT_DB_REGEX
 
     for opt, arg in opts:
