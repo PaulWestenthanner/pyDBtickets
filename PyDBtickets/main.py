@@ -4,6 +4,7 @@ import os
 import getopt
 import re
 import sys
+import yaml
 
 from PyDBtickets.TrainTicketDocument import TrainTicketDocument
 from PyDBtickets.utils import NotATicketError
@@ -34,6 +35,8 @@ def usage():
     print("param -f --folder    Folder to search for train tickets")
     print("param -i --invoice   Directory to invoices/bills")
     print("param -c --costs     File path to cost sheet (in ods format)")
+    print("param -o --config    config file (.yaml) which contains the above variables."
+          "Can be used instead of passing all params on their own")
     print("param -r --regex     Regex for pdf files to consider as potential train tickets")
 
 
@@ -64,7 +67,7 @@ def run(folder_to_search, invoice_dir, cost_sheet, db_regex):
         print("ticket", tick.filename)
         print("from", tick.from_to[0], "to", tick.from_to[1], "on",
               tick.travel_date.strftime("%Y-%m-%d"))
-        print("total price:", tick.gross_price, "vat:", tick.vat)
+        print("total price:", tick.gross_price, "payed_vat:", tick.payed_vat)
         print("update cost sheet at", cost_sheet)
         tick.update_cost_sheet(cost_sheet)
         print("move to invoice directory", invoice_dir)
@@ -79,17 +82,12 @@ def main():
     :return:
     """
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:i:c:r:h',
-                                   ['folder=', 'invoice=', 'costs=', 'regex=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:i:c:r:h:o',
+                                   ['folder=', 'invoice=', 'costs=', 'regex=', 'config=','help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
 
-    # config variables
-    # set default value if not otherwise specified in command line option
-    folder_to_search = "/home/paul/Downloads"
-    invoice_dir = "/home/paul/Documents/Steuer/Rechnungen"
-    cost_sheet = "/home/paul/Documents/Steuer/bills_eur.ods"
     db_regex = DEFAULT_DB_REGEX
 
     for opt, arg in opts:
@@ -104,6 +102,14 @@ def main():
             cost_sheet = arg
         elif opt in ('-r', '--regex'):
             db_regex = arg
+        elif opt in ('-o', '--config'):
+            for var in ['folder_to_search', 'invoice_dir', 'cost_sheet']:
+                assert var not in vars() or var not in globals()
+            with open(arg, 'r+') as f:
+                config = yaml.load(f)
+            folder_to_search = config['folder_to_search']
+            invoice_dir = config['invoice_dir']
+            cost_sheet = config['cost_sheet_path']
         else:
             usage()
             sys.exit(2)

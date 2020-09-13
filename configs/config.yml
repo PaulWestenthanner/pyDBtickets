@@ -1,0 +1,3 @@
+folder_to_search : "<your_directory_to_search>"
+invoice_dir : "<path_to_the_invoice_documents>"
+cost_sheet : "<path_to_save_output_cost_sheet>"
