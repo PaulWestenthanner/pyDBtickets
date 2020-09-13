@@ -114,12 +114,12 @@ class TrainTicketDocument(object):
             # todo: this might not work if we have different vats
             pattern = r'\nMwSt \(?D\)?:? (\d{1,2})%\n\d+,\d+€\n([\s\S]*)' + str(self.gross_price).replace('.', ',')
             vat_rate_str, vat_at_rate_str_list = re.search(pattern, self.ticket_text).groups()
-            payed_var_list = vat_at_rate_str_list.rstrip('€\n').split('€\n')
+            payed_vat_list = vat_at_rate_str_list.rstrip('€\n').split('€\n')
             # multiple position case
-            if len(payed_var_list) > 1:
+            if len(payed_vat_list) > 1:
                 # assert that we have always 2n+1 elements in the list
-                assert len(payed_var_list) % 2 == 1
-                payed_var_as_str = [el for idx, el in enumerate(payed_var_list) if idx % 2 == 0]
+                assert len(payed_vat_list) % 2 == 1
+                payed_var_as_str = [el for idx, el in enumerate(payed_vat_list) if idx % 2 == 0]
                 payed_var = sum([round(float(el.replace(',', '.')), 2) for el in payed_var_as_str])
             # single position case. This is comparably easy
             else:
@@ -128,7 +128,7 @@ class TrainTicketDocument(object):
 
         vat_rate, vat_at_rate = get_vat()
 
-        # do some sanity checks
+        # do some sanity checks in case some formats change
         if abs(self.gross_price - self.gross_price / (1 + vat_rate) - vat_at_rate) > 0.05:
             # difference can be more than 1 ct because in multiple positions multiple
             # rounding can occur
